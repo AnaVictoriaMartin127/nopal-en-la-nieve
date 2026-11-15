@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nopal en la nieve</title>
+<style>
+  :root { --mapw: min(1000px, 94vw, calc(56vh * 220 / 170)); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { min-height: 100%; background: #fff; color: #000; }
+  header { padding: clamp(16px, 4vh, 40px) 16px 0; text-align: center; }
+  h1 img { display: block; margin: 0 auto; width: min(820px, 92vw); height: auto; }
+  main { padding: clamp(6px, 1.5vh, 16px) 0 24px; text-align: center; }
+  #stage { display: inline-block; transition: opacity .2s linear; line-height: 0; }
+  #stage.out { opacity: 0; }
+  #world, #strip {
+    width: var(--mapw); height: auto;
+    background: #fff; outline: none;
+  }
+  #strip-wrap { text-align: center; line-height: 0; padding-top: clamp(8px, 2vh, 20px); }
+  #keys-wrap { line-height: 0; margin-top: clamp(10px, 2vh, 20px); }
+  #keys { width: calc(var(--mapw) * 46 / 220); height: auto; background: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <h1><img src="data:image/png;base64,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" alt="Nopal en la nieve" width="1896" height="168"></h1>
+</header>
+<div id="strip-wrap" aria-hidden="true"><canvas id="strip"></canvas></div>
+<main>
+  <div id="stage"><canvas id="world" tabindex="0" autofocus
+       aria-label="Mapa: camina con el coyote hacia Fuente, Viveros o Mercado y entra por la puerta"></canvas></div>
+  <div id="keys-wrap"><canvas id="keys" role="img"
+       aria-label="Usa las cuatro flechas del teclado para mover al coyote"></canvas></div>
+</main>
+
+<script>
+/* ---------- grid + drawing helpers (1 cell = 1 "pixel" of the art) ---------- */
+const W = 220, H = 170, C = 4;                 // world size in cells, canvas px per cell
+const cv = document.getElementById('world'), wctx = cv.getContext('2d');
+let ctx = wctx;                                  // helpers draw on whichever canvas is current
+const stage = document.getElementById('stage');
+cv.width = W * C; cv.height = H * C;
+
+function parse(s) {
+  const rows = s.trim().split('\n'), pts = [];
+  rows.forEach((r, y) => { for (let x = 0; x < r.length; x++) if (r[x] === '#') pts.push([x, y]); });
+  return { pts, w: Math.max(...rows.map(r => r.length)), h: rows.length };
+}
+function put(g, x, y, k = 1, col = '#000', flip = false) {
+  ctx.fillStyle = col;
+  for (const [px, py] of g.pts) {
+    const qx = flip ? g.w - 1 - px : px;
+    ctx.fillRect(Math.round(x + qx * k) * C, Math.round(y + py * k) * C, k * C, k * C);
+  }
+}
+function rect(x, y, w, h, col = '#000') { ctx.fillStyle = col; ctx.fillRect(x * C, y * C, w * C, h * C); }
+
+/* ---------- art ---------- */
+const HOLES = [[5, 6], [9, 7], [13, 6], [2, 3]];                 // body dots + eye
+const noHoles = g => ({ ...g, pts: g.pts.filter(([x, y]) => !HOLES.some(h => h[0] === x && h[1] === y)) });
+const BODY = `
+...#.#................
+...###................
+..####................
+######................
+.#####................
+...###############....
+...################...
+...#################..
+...###############.##.`;
+const COYOTE = [parse(BODY + `
+...###.###..###.###.##
+...##..##...##..##..##
+...##..##...##..##..##
+...##..##...##..##...#`), parse(BODY + `
+...###.###..###.###.##
+....##.##....##.##..##
+....##..##...##..##.##
+...##...##..##...##..#`)].map(noHoles);
+const CW = 22, CH = 13;
+const NW = 10;                                   // width when she faces up or down
+const LEGS = [`
+.##....##.
+.##.......`, `
+.##....##.
+.......##.`];
+const FRONT = LEGS.map(l => parse(`
+##......##
+###....###
+##########
+##.####.##
+##########
+.###..###.
+..######..
+.########.
+.###.####.
+.#####.##.
+.########.` + l));
+const BACK = [`
+.##.##.##.
+.##.##....`, `
+.##.##.##.
+....##.##.`].map(l => parse(`
+##......##
+###....###
+##########
+##########
+.########.
+..######..
+.########.
+.##.#####.
+.#####.##.
+.########.
+.########.` + l));
+
+const TREE = parse(`
+..####..
+.######.
+###.####
+########
+.####.#.
+..####..
+...##...
+...##...
+...##...
+...##...`);
+const FOUNT = [parse(`
+......#...#...#.....
+.......#..#..#......
+....................
+........####........
+........####........
+.........##.........
+......########......
+.......######.......
+.........##.........
+.........##.........
+..################..
+.##################.
+####################
+.##################.`), parse(`
+.....#....#....#....
+....................
+.......#..#..#......
+........####........
+........####........
+.........##.........
+......########......
+.......######.......
+.........##.........
+.........##.........
+..################..
+.##################.
+####################
+.##################.`)];
+const PINE = parse(`
+......##......
+.....####.....
+....######....
+.....####.....
+...########...
+..##########..
+....######....
+..##########..
+.############.
+##############
+......##......
+......##......
+......##......`);
+const STALL = parse(`
+##########################
+##.##.##.##.##.##.##.##.##
+#..#..#..#..#..#..#..#..#.
+.#......................#.
+.#..##...##...##...##...#.
+.#..##...##...##...##...#.
+.########################.
+.########################.
+.#......................#.
+.#......................#.
+.#......................#.`);
+const SPARK = parse(`
+..#..
+.#.#.
+#...#
+.#.#.
+..#..`);
+
+const FONT = {};
+Object.entries({
+A: `
+.####.
+######
+##..##
+##..##
+######
+######
+##..##
+##..##`,
+C: `
+.#####
+######
+##....
+##....
+##....
+##....
+######
+.#####`,
+D: `
+#####.
+######
+##..##
+##..##
+##..##
+##..##
+######
+#####.`,
+E: `
+######
+######
+##....
+#####.
+#####.
+##....
+######
+######`,
+F: `
+######
+######
+##....
+#####.
+#####.
+##....
+##....
+##....`,
+I: `
+##
+##
+##
+##
+##
+##
+##
+##`,
+M: `
+##....##
+###..###
+########
+##.##.##
+##.##.##
+##....##
+##....##
+##....##`,
+N: `
+##...##
+###..##
+####.##
+#######
+##.####
+##..###
+##...##
+##...##`,
+O: `
+.####.
+######
+##..##
+##..##
+##..##
+##..##
+######
+.####.`,
+R: `
+#####.
+######
+##..##
+######
+#####.
+##.##.
+##..##
+##..##`,
+S: `
+.#####
+######
+##....
+#####.
+.#####
+....##
+######
+#####.`,
+T: `
+######
+######
+..##..
+..##..
+..##..
+..##..
+..##..
+..##..`,
+U: `
+##..##
+##..##
+##..##
+##..##
+##..##
+##..##
+######
+.####.`,
+V: `
+##...##
+##...##
+##...##
+.##.##.
+.##.##.
+..###..
+..###..
+...#...`,
+}).forEach(([k, v]) => FONT[k] = parse(v));
+
+function textW(s, k = 1, gap = 2) {
+  let w = 0; for (const ch of s) w += ((FONT[ch] ? FONT[ch].w : 3) + gap) * k; return w - gap * k;
+}
+function text(s, cx, y, k = 1, gap = 2) {           // centred on cx
+  let x = Math.round(cx - textW(s, k, gap) / 2);
+  for (const ch of s) { const g = FONT[ch]; if (g) put(g, x, y, k); x += ((g ? g.w : 3) + gap) * k; }
+}
+
+/* ---------- world layout (from the sketch) ---------- */
+const BW = 62, BH = 42, DX = 16, DW = 30;          // building box + door gap in its bottom wall
+const PLACES = [
+  { id: 'fuente',  name: 'FUENTE',  x: 28,  y: 24 },
+  { id: 'viveros', name: 'VIVEROS', x: 130, y: 24 },
+  { id: 'mercado', name: 'MERCADO', x: 79,  y: 100 },
+];
+const EXIT = { x: W / 2 - 15, w: 30 };             // door gap in an interior's bottom wall
+
+function frame(gap) {
+  rect(3, 3, W - 6, 2); rect(3, 3, 2, H - 6); rect(W - 5, 3, 2, H - 6);
+  if (gap) { rect(3, H - 5, EXIT.x - 3, 2); rect(EXIT.x + EXIT.w, H - 5, W - 3 - EXIT.x - EXIT.w, 2); }
+  else rect(3, H - 5, W - 6, 2);
+}
+function box(b) {
+  rect(b.x, b.y, BW, 2); rect(b.x, b.y, 2, BH); rect(b.x + BW - 2, b.y, 2, BH);
+  rect(b.x, b.y + BH - 2, DX, 2); rect(b.x + DX + DW, b.y + BH - 2, BW - DX - DW, 2);
+}
+
+const SCENES = {
+  world: {
+    top: 6,
+    solids: PLACES.map(b => ({ x: b.x, y: b.y, w: BW, h: BH })),
+    draw(t) {
+      frame(false);
+      PLACES.forEach(b => { box(b); text(b.name, b.x + BW / 2, b.y + BH + 4); });
+      const [f, v, m] = PLACES, k = Math.floor(t / 0.35) % 2;
+      put(TREE, f.x + 8, f.y + 6); put(FOUNT[k], f.x + 30, f.y + 18);
+      put(PINE, v.x + 9, v.y + 6); put(PINE, v.x + 36, v.y + 21);
+      put(STALL, m.x + 18, m.y + 13);
+    },
+  },
+  fuente: {
+    top: 30,
+    solids: [{ x: 84, y: 66, w: 60, h: 36 }, { x: 24, y: 48, w: 24, h: 30 }, { x: 176, y: 78, w: 24, h: 30 }],
+    draw(t) {
+      frame(true); text('FUENTE', W / 2, 10, 2);
+      put(FOUNT[Math.floor(t / 0.35) % 2], 84, 60, 3);
+      put(TREE, 24, 48, 3); put(TREE, 176, 78, 3);
+      put(SPARK, 62, 40); put(SPARK, 160, 46);
+    },
+  },
+  viveros: {
+    top: 30,
+    solids: [20, 62, 104, 146, 188].map(x => ({ x: x - 8, y: 40, w: 28, h: 26 }))
+      .concat([{ x: 20, y: 88, w: 28, h: 26 }, { x: 172, y: 88, w: 28, h: 26 }]),
+    draw() {
+      frame(true); text('VIVEROS', W / 2, 10, 2);
+      [12, 54, 96, 138, 180].forEach(x => put(PINE, x, 40, 2));
+      put(PINE, 20, 88, 2); put(PINE, 172, 88, 2);
+    },
+  },
+  mercado: {
+    top: 30,
+    solids: [[18, 42], [84, 42], [150, 42], [18, 92], [150, 92]].map(([x, y]) => ({ x, y, w: 52, h: 22 })),
+    draw() {
+      frame(true); text('MERCADO', W / 2, 10, 2);
+      this.solids.forEach(s => put(STALL, s.x, s.y, 2));
+    },
+  },
+};
+
+/* ---------- player ---------- */
+const p = { x: W / 2 - CW / 2, y: 74, w: CW, h: CH, face: -1, dir: 'side', walk: 0 };
+let scene = 'world', busy = false, target = null;
+const keys = {};
+const KEYMAP = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd' };   // arrows only
+addEventListener('keydown', e => { const k = KEYMAP[e.key]; if (k) { keys[k] = true; target = null; e.preventDefault(); } });
+addEventListener('keyup', e => { const k = KEYMAP[e.key]; if (k) keys[k] = false; });
+addEventListener('blur', () => { for (const k in keys) keys[k] = false; target = null; });
+
+const held = false;                                   // no tap/click walking
+
+function blocked(x, y, w = p.w) {
+  const s = SCENES[scene];
+  if (x < 6 || x + w > W - 6 || y < s.top || y + CH > H - 6) return true;
+  return s.solids.some(o => x < o.x + o.w && x + w > o.x && y < o.y + o.h && y + CH > o.y);
+}
+function turn(dir) {                              // side view is wide, up/down views are narrow
+  if (dir === p.dir) return;
+  const nw = dir === 'side' ? CW : NW, cx = p.x + p.w / 2;
+  for (const o of [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7]) {   // nudge off a wall if needed
+    const nx = cx - nw / 2 + o;
+    if (!blocked(nx, p.y, nw)) { p.x = nx; p.w = nw; p.dir = dir; return; }
+  }
+}
+function go(to, cx, y, dir) {
+  busy = true; target = null; stage.classList.add('out');
+  setTimeout(() => { scene = to; p.dir = dir; p.w = NW; p.x = cx - NW / 2; p.y = y;
+                     stage.classList.remove('out'); busy = false; }, 220);
+}
+
+function step(dt) {
+  let dx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), dy = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+  if (!dx && !dy && target) {
+    const tx = target.x - CW / 2 - p.x, ty = target.y - CH / 2 - p.y, d = Math.hypot(tx, ty);
+    if (d > 1.5) { dx = tx / d; dy = ty / d; } else if (!held) target = null;
+  } else if (dx && dy) { dx *= Math.SQRT1_2; dy *= Math.SQRT1_2; }
+  const moving = Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05;
+  if (Math.abs(dx) > 0.2) p.face = dx < 0 ? -1 : 1;
+  p.walk = moving ? p.walk + dt : 0;
+  if (moving) turn(Math.abs(dy) > Math.abs(dx) ? (dy > 0 ? 'down' : 'up') : 'side');
+
+  const sp = 52 * dt, cx = p.x + p.w / 2;
+  let hitX = false, hitY = false;
+  if (dx) { if (blocked(p.x + dx * sp, p.y)) hitX = true; else p.x += dx * sp; }
+  if (dy) { if (blocked(p.x, p.y + dy * sp)) hitY = true; else p.y += dy * sp; }
+
+  if (scene === 'world' && dy < -0.2) {                      // walk up into a door
+    for (const b of PLACES)
+      if (cx > b.x + DX + 2 && cx < b.x + DX + DW - 2 && p.y >= b.y + BH - 1 && p.y <= b.y + BH + 1.5)
+        return go(b.id, W / 2, H - 6 - CH - 6, 'up');
+  } else if (scene !== 'world' && dy > 0.2) {                // walk down and out
+    if (cx > EXIT.x + 2 && cx < EXIT.x + EXIT.w - 2 && p.y + CH >= H - 6 - 1.5) {
+      const b = PLACES.find(q => q.id === scene);
+      return go('world', b.x + DX + DW / 2, b.y + BH + 3, 'down');
+    }
+  }
+  if (target && !held && ((hitX && hitY) || (hitX && Math.abs(dy) < 0.05) || (hitY && Math.abs(dx) < 0.05))) target = null;
+}
+
+function draw(t) {
+  rect(0, 0, W, H, '#fff');
+  SCENES[scene].draw(t);
+  const f = p.walk ? Math.floor(p.walk / 0.14) % 2 : 0;
+  const g = p.dir === 'side' ? COYOTE[f] : p.dir === 'down' ? FRONT[f] : BACK[f];
+  halo(g, Math.round(p.x), Math.round(p.y), p.dir === 'side' && p.face > 0);   // white halo so she reads over labels
+}
+
+/* ---------- strip under the title: she runs in, stops in the middle, howls, runs on ---------- */
+const SW = 220, SH = 26, GROUND = 23;
+const sv = document.getElementById('strip'), sctx = sv.getContext('2d');
+sv.width = SW * C; sv.height = SH * C;
+
+const HOWL_BASE = parse(`
+....................
+...............#....
+..............##....
+.............###....
+.........#..###.....
+.........##.###.....
+.........######.....
+..........####......
+.........#####......
+........######......
+.......#######......
+......########......
+.....#########......
+.....#########......
+....##########......
+#...####..####......
+##..####..####......
+.##.####..####......
+..######..#####.....`);
+const HOWL_HOLES = [[8, 12], [6, 14], [10, 10], [11, 15]];
+function howlGlyph(tailDown, stretch) {
+  let pts = HOWL_BASE.pts.filter(([x, y]) => !HOWL_HOLES.some(h => h[0] === x && h[1] === y));
+  if (tailDown) pts = pts.filter(([x, y]) => !(x <= 3 && y >= 15 && y <= 17))
+                         .concat([[0, 16], [0, 17], [1, 17], [2, 17], [3, 17]]);
+  if (stretch) pts = pts.concat([[15, 0], [14, 1]]);
+  return { pts, w: HOWL_BASE.w, h: HOWL_BASE.h };
+}
+const HOWL = [0, 1].map(t => [0, 1].map(s => howlGlyph(t, s)));     // HOWL[tail][stretch]
+
+const FLOWERS = [parse(`
+.#.#.
+#####
+##.##
+#####
+.#.#.
+..#..
+.##..
+..#..`), parse(`
+#.#.#
+#####
+#####
+.###.
+..#..
+..##.
+..#..
+..#..`)];
+const FLOWER_X = [10, 33, 58, 80, 137, 158, 183, 205];
+
+function halo(g, x, y, flip) {
+  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) put(g, x + ox, y + oy, 1, '#fff', flip);
+  put(g, x, y, 1, '#000', flip);
+}
+const STILL = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function drawStrip(t) {
+  ctx = sctx;
+  rect(0, 0, SW, SH, '#fff');
+  FLOWER_X.forEach((x, i) => {
+    const g = FLOWERS[i % 2];
+    put(g, x, GROUND - g.h, 1, '#000', !STILL && Math.floor(t / 0.6 + i * 0.37) % 2 === 1);   // gentle sway
+  });
+  const u = STILL ? 4 : t % 11, mid = SW / 2 - 10;
+  if (u < 3 || (u >= 7 && u < 10)) {                              // running, right to left
+    const x = u < 3 ? SW + (mid - SW) * (u / 3) : mid + (-CW - 2 - mid) * ((u - 7) / 3);
+    halo(COYOTE[Math.floor(u / 0.14) % 2], Math.round(x), GROUND - CH, false);
+  } else if (u < 7) {                                             // sitting in the middle, howling
+    const h = u - 3, on = h > 0.4 && h < 3.7 && Math.floor((h - 0.4) / 0.55) % 2 === 0;
+    halo(HOWL[Math.floor(h / 0.4) % 2][on ? 1 : 0], mid, GROUND - HOWL_BASE.h, true);
+    if (on && Math.floor(h / 0.2) % 2) { rect(mid - 1, GROUND - 19, 2, 1); rect(mid - 4, GROUND - 16, 2, 1); }
+  }
+  ctx = wctx;
+}
+
+/* ---------- instructions as a picture: the four arrow keys, each pressed in turn while she moves ---------- */
+const KW = 46, KH = 27;
+const kv = document.getElementById('keys'), kctx = kv.getContext('2d');
+kv.width = KW * C; kv.height = KH * C;
+const ARROW = {
+  l: parse(`
+..#...
+.##...
+######
+######
+.##...
+..#...`),
+  u: parse(`
+..##..
+.####.
+######
+..##..
+..##..
+..##..`),
+  d: parse(`
+..##..
+..##..
+..##..
+######
+.####.
+..##..`),
+};
+const KEYPOS = { u: [16, 0], l: [1, 13], d: [16, 13], r: [31, 13] };
+function key(name, down) {
+  const [x, y0] = KEYPOS[name], y = y0 + (down ? 1 : 0), g = ARROW[name === 'r' ? 'l' : name];
+  rect(x, y, 14, 12);
+  if (!down) rect(x + 2, y + 2, 10, 8, '#fff');
+  put(g, x + 4, y + 3, 1, down ? '#fff' : '#000', name === 'r');
+}
+const PRESS = ['l', 'd', 'r', 'u'];                 // each key dips in turn
+function drawKeys(t) {
+  ctx = kctx;
+  rect(0, 0, KW, KH, '#fff');
+  const u = STILL ? 0 : t % (PRESS.length * 1.35), i = Math.floor(u / 1.35), v = u - i * 1.35;
+  const down = !STILL && v > 0.15 && v < 1.15;
+  for (const name in KEYPOS) key(name, down && name === PRESS[i]);
+  ctx = wctx;
+}
+
+/* ---------- butterflies: now and then one or two drift across the map; purely decorative ---------- */
+const FLY = [parse(`
+.#.......#.
+..#.....#..
+###..#..###
+####.#.####
+.#########.
+.####.####.
+###..#..###
+##.......##`), parse(`
+..#.....#..
+...#...#...
+...##.##...
+...#####...
+....###....
+...#####...
+...##.##...
+...#...#...`)];
+let flies = [], nextFlight = 3;
+function drawFlies(t, dt) {
+  if (STILL) return;
+  if (!flies.length && t > nextFlight) {
+    const dir = Math.random() < 0.5 ? 1 : -1, y = 20 + Math.random() * (H - 60);
+    const n = Math.random() < 0.5 ? 1 : 2;
+    for (let i = 0; i < n; i++)
+      flies.push({ x: dir > 0 ? -14 - i * 22 : W + 3 + i * 22, y: y + i * 12, dir,
+                   v: 20 + Math.random() * 8, ph: Math.random() * 6, amp: 5 + Math.random() * 5 });
+  }
+  for (const f of flies) {
+    f.x += f.dir * f.v * dt;
+    const y = f.y + Math.sin(t * 2.2 + f.ph) * f.amp + Math.sin(t * 5.1 + f.ph) * 1.5;
+    halo(FLY[Math.floor(t / 0.16 + f.ph) % 2], Math.round(f.x), Math.round(y), false);
+  }
+  const before = flies.length;
+  flies = flies.filter(f => f.x > -40 && f.x < W + 40);
+  if (before && !flies.length) nextFlight = t + 7 + Math.random() * 12;      // 7-19 s until the next visit
+}
+
+/* same rounded look as the title: blur the hard pixels, then snap back to black/white */
+function fit() { cv.style.filter = sv.style.filter = kv.style.filter = `blur(${(cv.clientWidth / W * 0.3).toFixed(2)}px) contrast(30)`; }
+new ResizeObserver(fit).observe(cv); fit();
+
+const start = location.hash.slice(1);                          // e.g. #mercado opens inside
+if (SCENES[start] && start !== 'world') { scene = start; p.dir = 'up'; p.w = NW; p.x = W / 2 - NW / 2; p.y = H - 6 - CH - 6; }
+
+/* take keyboard focus straight away, so the arrows work without clicking the map first */
+function grab() { if (!document.hasFocus() || document.activeElement !== cv) { try { window.focus(); cv.focus({ preventScroll: true }); } catch (_) {} } }
+grab();
+['load', 'pageshow', 'focus'].forEach(ev => addEventListener(ev, grab));
+document.addEventListener('visibilitychange', grab);
+document.addEventListener('pointermove', grab, { passive: true });     // hovering the page is enough
+document.addEventListener('pointerdown', grab);
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!busy) step(dt);
+  draw(now / 1000);
+  drawFlies(now / 1000, dt);
+  drawStrip(now / 1000);
+  drawKeys(now / 1000);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
