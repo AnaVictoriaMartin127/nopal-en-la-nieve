@@ -20,6 +20,10 @@
   #strip-wrap { text-align: center; line-height: 0; padding-top: clamp(8px, 2vh, 20px); }
   #keys-wrap { line-height: 0; margin-top: clamp(10px, 2vh, 20px); }
   #keys { width: calc(var(--mapw) * 46 / 220); height: auto; background: #fff; }
+  @media (pointer: coarse) {            /* phones and tablets: the arrow pad is big and pressable */
+    #keys { width: min(300px, 74vw); touch-action: none; user-select: none;
+            -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  }
 </style>
 </head>
 <body>
@@ -390,7 +394,8 @@ const SCENES = {
 /* ---------- player ---------- */
 const p = { x: W / 2 - CW / 2, y: 74, w: CW, h: CH, face: -1, dir: 'side', walk: 0 };
 let scene = 'world', busy = false, target = null;
-const keys = {};
+const keys = {}, touch = {};                      // keyboard arrows, and the on-screen pad on touch screens
+const on = k => keys[k] || touch[k];
 const KEYMAP = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd' };   // arrows only
 addEventListener('keydown', e => { const k = KEYMAP[e.key]; if (k) { keys[k] = true; target = null; e.preventDefault(); } });
 addEventListener('keyup', e => { const k = KEYMAP[e.key]; if (k) keys[k] = false; });
@@ -418,7 +423,7 @@ function go(to, cx, y, dir) {
 }
 
 function step(dt) {
-  let dx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0), dy = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+  let dx = (on('r') ? 1 : 0) - (on('l') ? 1 : 0), dy = (on('d') ? 1 : 0) - (on('u') ? 1 : 0);
   if (!dx && !dy && target) {
     const tx = target.x - CW / 2 - p.x, ty = target.y - CH / 2 - p.y, d = Math.hypot(tx, ty);
     if (d > 1.5) { dx = tx / d; dy = ty / d; } else if (!held) target = null;
@@ -533,7 +538,7 @@ function drawStrip(t) {
 }
 
 /* ---------- instructions as a picture: the four arrow keys, each pressed in turn while she moves ---------- */
-const KW = 46, KH = 27;
+const KW = 46, KH = 29;
 const kv = document.getElementById('keys'), kctx = kv.getContext('2d');
 kv.width = KW * C; kv.height = KH * C;
 const ARROW = {
@@ -559,22 +564,49 @@ const ARROW = {
 .####.
 ..##..`),
 };
-const KEYPOS = { u: [16, 0], l: [1, 13], d: [16, 13], r: [31, 13] };
+const KEYPOS = { u: [16, 1], l: [1, 14], d: [16, 14], r: [31, 14] };
 function key(name, down) {
   const [x, y0] = KEYPOS[name], y = y0 + (down ? 1 : 0), g = ARROW[name === 'r' ? 'l' : name];
   rect(x, y, 14, 12);
   if (!down) rect(x + 2, y + 2, 10, 8, '#fff');
   put(g, x + 4, y + 3, 1, down ? '#fff' : '#000', name === 'r');
 }
-const PRESS = ['l', 'd', 'r', 'u'];                 // each key dips in turn
+const PRESS = ['l', 'd', 'r', 'u'];                 // demo: each key dips in turn until a real one is used
+let used = false;
 function drawKeys(t) {
   ctx = kctx;
   rect(0, 0, KW, KH, '#fff');
-  const u = STILL ? 0 : t % (PRESS.length * 1.35), i = Math.floor(u / 1.35), v = u - i * 1.35;
-  const down = !STILL && v > 0.15 && v < 1.15;
-  for (const name in KEYPOS) key(name, down && name === PRESS[i]);
+  const real = ['l', 'r', 'u', 'd'].filter(on);
+  if (real.length) used = true;
+  const u = t % (PRESS.length * 1.35), i = Math.floor(u / 1.35), v = u - i * 1.35;
+  const demo = !used && !STILL && v > 0.15 && v < 1.15 ? PRESS[i] : null;
+  for (const name in KEYPOS) key(name, real.includes(name) || name === demo);
   ctx = wctx;
 }
+
+/* touch screens only: holding a drawn key walks her, exactly like the keyboard arrow */
+const fingers = new Map();                          // pointerId -> key name
+function keyAt(e) {
+  const r = kv.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * KW, y = (e.clientY - r.top) / r.height * KH;
+  let best = null, bd = 1e9;
+  for (const name in KEYPOS) {                      // nearest key, so near-misses still count
+    const d = Math.hypot(KEYPOS[name][0] + 7 - x, KEYPOS[name][1] + 6 - y);
+    if (d < bd) { bd = d; best = name; }
+  }
+  return best;
+}
+function syncTouch() { for (const k of ['l', 'r', 'u', 'd']) touch[k] = [...fingers.values()].includes(k); }
+function finger(e) {
+  if (e.pointerType === 'mouse') return;            // computers stay keyboard-only
+  e.preventDefault(); fingers.set(e.pointerId, keyAt(e)); syncTouch();
+}
+function lift(e) { fingers.delete(e.pointerId); syncTouch(); }
+kv.addEventListener('pointerdown', e => { finger(e); try { kv.setPointerCapture(e.pointerId); } catch (_) {} });
+kv.addEventListener('pointermove', e => { if (fingers.has(e.pointerId)) finger(e); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => kv.addEventListener(ev, lift));
+kv.addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('blur', () => { fingers.clear(); syncTouch(); });
 
 /* ---------- butterflies: now and then one or two drift across the map; purely decorative ---------- */
 const FLY = [parse(`
@@ -615,8 +647,11 @@ function drawFlies(t, dt) {
 }
 
 /* same rounded look as the title: blur the hard pixels, then snap back to black/white */
-function fit() { cv.style.filter = sv.style.filter = kv.style.filter = `blur(${(cv.clientWidth / W * 0.3).toFixed(2)}px) contrast(30)`; }
-new ResizeObserver(fit).observe(cv); fit();
+function fit() {
+  cv.style.filter = sv.style.filter = `blur(${(cv.clientWidth / W * 0.3).toFixed(2)}px) contrast(30)`;
+  kv.style.filter = `blur(${(kv.clientWidth / KW * 0.3).toFixed(2)}px) contrast(30)`;
+}
+const ro = new ResizeObserver(fit); ro.observe(cv); ro.observe(kv); fit();
 
 const start = location.hash.slice(1);                          // e.g. #mercado opens inside
 if (SCENES[start] && start !== 'world') { scene = start; p.dir = 'up'; p.w = NW; p.x = W / 2 - NW / 2; p.y = H - 6 - CH - 6; }
